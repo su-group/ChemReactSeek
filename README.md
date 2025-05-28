@@ -1,17 +1,17 @@
-### Knowledge-Guided Chemical Reaction Protocol Design with Augmented Large Language Models: Structured Data Extraction and Contextual Knowledge Integration
+# Knowledge-Guided Chemical Reaction Protocol Design with Augmented Large Language Models: Structured Data Extraction and Contextual Knowledge Integration
 
-####Overview
+## Overview
 
 We present ChemReactSeek, a unified platform combining automated data extraction, dynamic knowledge base integration, and semantic vectorization to enable mechanism-informed, data-driven experimental protocol design for complex chemical reactions.
 
 ------------
-####Installation
+## Installation
 - Python 3.9+
 - fitz（PyMuPDF）
 - sentence_transformers
 - faiss
 ------------
-####Usage
+## Usage
 **Extraction_Structured_Data**
 *Utilizing a large language model API to extract structured information on reaction procedures from a collection of PDF literature.*
 Please modify the code at the corresponding location according to the provided instructions.
@@ -24,5 +24,5 @@ Please modify the code at the corresponding location according to the provided i
 Please modify the code at the corresponding location according to the provided instructions.
 
 ------------
-####License
+## License
 The implementation code and associated data for this research are publicly accessible and distributed under the terms of the MIT License (https://opensource.org/licenses/MIT).
