@@ -4,8 +4,8 @@ from sentence_transformers import SentenceTransformer
 import faiss
 import requests
 
-# Load locally pretrained embedding model
-model = SentenceTransformer('./models/all-MiniLM-L6-v2')
+# Load local pre-trained embedding model
+model = SentenceTransformer('./all-MiniLM-L6-v2')  #The storage location where you downloaded the all-MiniLM-L6-v2 model
 
 # Initialize FAISS index
 dimension = model.get_sentence_embedding_dimension()
@@ -17,32 +17,28 @@ documents = []
 
 def extract_text_from_txt(txt_path):
     with open(txt_path, 'r', encoding='utf-8') as file:
-        text = file.read().strip()  # Remove leading and trailing whitespace characters
-    print(f"Extracted text length: {len(text)}")  # Debugging information
+        text = file.read().strip()  # Remove leading/trailing whitespace
     return text
 
 
 def split_into_chunks(text, chunk_size=1000):
     words = text.split()
-    print(f"Number of words: {len(words)}")  # Debugging information
     chunks = []
     for i in range(0, len(words), chunk_size):
         chunk = " ".join(words[i:i + chunk_size])
         if chunk.strip():  # Ensure chunk is not empty
             chunks.append(chunk)
-    print(f"Number of chunks: {len(chunks)}")  # Debugging information
     return chunks
 
 
 def vectorize_and_store(chunks):
     if not chunks:
-        print("No chunks to vectorize.")  # Debugging information
+        print("No chunks to vectorize.")
         return
 
     embeddings = model.encode(chunks)
-    print(f"Embeddings shape: {embeddings.shape}")  # Debugging information
     if len(embeddings.shape) == 1:
-        embeddings = embeddings.reshape(1, -1)  # If it's a one-dimensional array, convert it to a two-dimensional array
+        embeddings = embeddings.reshape(1, -1)  # If one-dimensional array, convert to two-dimensional array
     index.add(embeddings.astype(np.float32))
     documents.extend(chunks)
 
@@ -55,27 +51,19 @@ def search(query, top_k=5):
 
 
 def call_cloud_model(prompt, folder_path=None):
-    global_prompt = ("You are an expert chemist! Read the provided literature file about reactions carefully. "
-                     "Compile a detailed table using the provided paragraphs, and extract and present the following details:\n"
-                     "a. reactant\nb. temperature\nc. pressure\nd. reactant concentration\ne. catalyst\nf. reagent\ng. product\nh. complete reaction")
+    global_prompt = (
+        "You are an expert with knowledge in the field of hydrogenation reaction, and you will answer a series of questions in the field of hydrogenation according to user requirements and knowledge base content, including experimental scheme design.")
 
     context = [{"role": "system", "content": global_prompt}]
 
-    if folder_path:
-        initial_prompt = (
-                "Extract chemical reactions from all TXT files in the following folder and compile them into a table. "
-                "Folder path:" + folder_path)
-        context.append({"role": "user", "content": initial_prompt})
-        print(f"Initial prompt sent.\n")
-
     context.append({"role": "user", "content": prompt})
 
-    url = "https://api.siliconflow.cn/v1/chat/completions"
+    url = "https://api.siliconflow.cn/v1/chat/completions"  #The instance invocation is for the large model api of silicon-based flow. You can switch to another large language model api as needed
     payload = {
         "model": "deepseek-ai/DeepSeek-V3",
         "messages": context,
         "stream": False,
-        "max_tokens": 512,
+        "max_tokens": 4096,
         "stop": ["exit"],
         "temperature": 0.7,
         "top_p": 0.7,
@@ -83,10 +71,9 @@ def call_cloud_model(prompt, folder_path=None):
         "frequency_penalty": 0.5,
         "n": 1,
         "response_format": {"type": "text"}
-        # Removed "tools" parameter
     }
     headers = {
-        "Authorization": "input your api",  # Input your own API key here
+        "Authorization": "Enter your api here",  #Enter your api here
         "Content-Type": "application/json"
     }
     response = requests.request("POST", url, json=payload, headers=headers)
@@ -100,32 +87,31 @@ def process_directory(directory):
     for filename in os.listdir(directory):
         if filename.endswith('.txt'):
             txt_path = os.path.join(directory, filename)
-            print(f"Processing TXT: {filename}")
             text = extract_text_from_txt(txt_path)
             chunks = split_into_chunks(text)
             vectorize_and_store(chunks)
 
 
 def main():
-    txt_directory = "api_result"  # Replace with your TXT folder path
+    txt_directory = "./extracted_data"  # Replace with txt text in your knowledge base
     process_directory(txt_directory)
 
-    # Send initial request to extract chemical reaction information
-    call_cloud_model("", folder_path=txt_directory)
-
     while True:
-        user_query = input("Please enter your question (type 'exit' to quit): ")
+        user_query = input("Enter your question (type 'exit' to quit): ")
         if user_query.lower() == 'exit':
             break
 
         results = search(user_query)
         context = "\n".join([doc for _, doc in results])
 
-        prompt = f"Answer the user's question based on the following document snippets:\n{context}\n\nQuestion: {user_query}"
+        prompt = f"Answer the user's question based on the following document fragments:\n{context}\n\nQuestion: {user_query}"
         answer = call_cloud_model(prompt)
         print(f"Answer: {answer}")
-        print(f"Source: Document snippets")
+        print(f"Source: Document fragments")
 
 
 if __name__ == "__main__":
     main()
+
+
+
